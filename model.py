@@ -36,3 +36,46 @@ class ResidualBlock(nn.Module):
         output = torch.relu(output_shortcut)
 
         return output
+    
+
+class AudioCNN(nn.Module):
+    def __init__(self, num_classes=50):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(1, 64, 7, 2, 3, bias=False), 
+            nn.BatchNorm2d(64), 
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(3, 2, 1)
+        )
+        self.layer1 = nn.ModuleList([ResidualBlock(64, 64) for _ in range(3)])
+        self.layer2 = nn.ModuleList(
+            [ResidualBlock(64 if i == 0 else 128, 128) for i in range(4)]
+        )
+        self.layer3 = nn.ModuleList(
+            [ResidualBlock(128 if i == 0 else 256, 256) for i in range(6)]
+        )
+        self.layer4 = nn.ModuleList(
+            [ResidualBlock(256 if i == 0 else 512, 512) for i in range(3)]
+        )
+        self.avg_pool = nn.AdaptiveAvgPool2d(1) # Flatten feature maps
+        self.dropout = nn.Dropout(0.5) # Prevent overfitting during training
+        self.linear_layer = nn.Linear(512, num_classes)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        
+        # Pass x through every residual block for each layer
+        for block in self.layer1:
+            x = block(x)
+        for block in self.layer2:
+            x = block(x)
+        for block in self.layer3:
+            x = block(x)
+        for block in self.layer4:
+            x = block(x)
+        
+        x = self.avg_pool(x)
+        x = x.view(x.size(0), -1) # Reshape to (batch size, channels)
+        x =self.dropout(x)
+        x = self.linear_layer(x)
+        return x
