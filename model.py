@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class ResidualBlock(nn.Module):
@@ -22,3 +23,16 @@ class ResidualBlock(nn.Module):
                 nn.Conv2d(in_channels, out_channels, 1, stride, bias=False), 
                 nn.BatchNorm2d(out_channels)
             )
+
+    def forward(self, x):
+        output = self.conv1(x)
+        output = self.bn1(output)
+        output = torch.relu(output)
+
+        output = self.conv2(x)
+        output = self.bn2(output)
+        shortcut = self.shortcut(x) if self.use_shortcut else x
+        output_shortcut = output + shortcut
+        output = torch.relu(output_shortcut)
+
+        return output
