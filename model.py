@@ -63,7 +63,7 @@ class AudioCNN(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        
+
         # Pass x through every residual block for each layer
         for block in self.layer1:
             x = block(x)
