@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 import modal
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -72,6 +73,26 @@ class ESC50Dataset(Dataset):
             spectogram = waveform
 
         return spectogram, row["label"]
+    
+
+def mixup_data(x, y):
+    percentage = np.random.beta(0.2, 0.2)
+    batch_size = x.size(0)
+
+    # Shuffle the batch of audio clips
+    index = torch.randperm(batch_size).to(x.device)
+
+    # Create a new sample based on two audio clips
+    # e.g. (0.7 * audio1) + (0.3 * audio2)
+    mixed_x = (percentage * x) + ((1 - percentage) * x[index, :])
+    y_label1, y_label2 = y, y[index]
+
+    return mixed_x, y_label1, y_label2, percentage
+
+
+def mixup_criterion(criterion, predicted, y_label1, y_label2, percentage):
+    return (percentage * criterion(predicted, y_label1) + 
+            (1 - percentage) * criterion(predicted, y_label2))
 
 
 @app.function(image=image, gpu="A10G", volumes={"/data": volume, "/models": model_volume}, timeout=60 * 60 * 3)
@@ -153,6 +174,23 @@ def train():
         for data, label in progress_bar:
             # Move variables to GPU if available
             data, label = data.to(device), label.to(device)
+
+            # Combine two audio files 30% of the time
+            if np.random.random() > 0.7:
+                data, label1, label2, percentage = mixup_data(data, label)
+                output = model(data)
+                loss = mixup_criterion(criterion, output, label1, label2, percentage)
+            else:
+                output = model(data)
+                loss = criterion(output, label)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            epoch_loss += loss.item()
+            progress_bar.set_postfix({"Loss": f"{loss.item():.4f}"})
 
 
 @app.local_entrypoint()
