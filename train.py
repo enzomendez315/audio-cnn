@@ -4,8 +4,15 @@ from pathlib import Path
 import modal
 import pandas as pd
 import torch
+import torch.nn as nn
+import torch.optim as optim
 import torchaudio
-from torch.utils.data import Dataset
+import torchaudio.transforms as T
+from torch.optim.lr_scheduler import OneCycleLR
+from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
+
+from model import AudioCNN
 
 app = modal.App("audio-cnn")
 
@@ -69,7 +76,83 @@ class ESC50Dataset(Dataset):
 
 @app.function(image=image, gpu="A10G", volumes={"/data": volume, "/models": model_volume}, timeout=60 * 60 * 3)
 def train():
-    print("Training")
+    esc50_dir = Path("/opt/esc50-data")
+
+    # Turn the WAV file into a spectogram
+    train_transform = nn.Sequential(
+        T.MelSpectrogram(
+            sample_rate=22050, 
+            n_fft=1024, 
+            hop_length=512, 
+            n_mels=128, 
+            f_min=0, 
+            f_max=11025
+        ),
+        T.AmplitudeToDB(),
+        T.FrequencyMasking(freq_mask_param=30),
+        T.TimeMasking(time_mask_param=80)
+    )
+
+    validation_transform = nn.Sequential(
+        T.MelSpectrogram(
+            sample_rate=22050, 
+            n_fft=1024, 
+            hop_length=512, 
+            n_mels=128, 
+            f_min=0, 
+            f_max=11025
+        ),
+        T.AmplitudeToDB()
+    )
+
+    train_dataset = ESC50Dataset(
+        data_dir=esc50_dir, 
+        metadata_file=esc50_dir / "meta" / "esc50.csv", 
+        split_train=True, 
+        transform=train_transform
+    )
+
+    validation_dataset = ESC50Dataset(
+        data_dir=esc50_dir, 
+        metadata_file=esc50_dir / "meta" / "esc50.csv", 
+        split_train=False, 
+        transform=validation_transform
+    )
+
+    print(f"Training samples: {len(train_dataset)}")
+    print(f"Validation samples: {len(validation_dataset)}")
+
+    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    test_dataloader = DataLoader(validation_dataset, batch_size=32, shuffle=False)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = AudioCNN(num_classes=len(train_dataset.categories))
+    model.to(device)
+
+    num_epochs = 100
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    optimizer = optim.AdamW(model.parameters(), lr=0.0005, weight_decay=0.01)
+
+    # Change the learning rate after every batch
+    scheduler = OneCycleLR(
+        optimizer, 
+        max_lr=0.002, 
+        epochs=num_epochs, 
+        steps_per_epoch=len(train_dataloader), 
+        pct_start=0.1
+    )
+
+    best_accuracy = 0.0
+
+    print("Starting training...")
+    for epoch in range(num_epochs):
+        model.train()
+        epoch_loss = 0.0
+
+        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs}")
+        for data, label in progress_bar:
+            # Move variables to GPU if available
+            data, label = data.to(device), label.to(device)
 
 
 @app.local_entrypoint()
