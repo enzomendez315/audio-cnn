@@ -1,3 +1,5 @@
+fastapi
+librosa
 numpy
 pandas
 tensorboard
