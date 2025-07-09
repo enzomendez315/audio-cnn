@@ -70,11 +70,11 @@ class ESC50Dataset(Dataset):
             waveform = torch.mean(waveform, dim=0, keepdim=True)
 
         if self.transform:
-            spectogram = self.transform(waveform)
+            spectrogram = self.transform(waveform)
         else:
-            spectogram = waveform
+            spectrogram = waveform
 
-        return spectogram, row["label"]
+        return spectrogram, row["label"]
     
 
 def mixup_data(x, y):
@@ -105,7 +105,7 @@ def train():
 
     esc50_dir = Path("/opt/esc50-data")
 
-    # Turn the WAV file into a spectogram
+    # Turn the WAV file into a spectrogram
     train_transform = nn.Sequential(
         T.MelSpectrogram(
             sample_rate=22050, 

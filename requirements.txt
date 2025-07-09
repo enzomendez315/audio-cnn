@@ -2,6 +2,9 @@ fastapi
 librosa
 numpy
 pandas
+pydantic
+requests
+soundfile
 tensorboard
 torch
 torchaudio
