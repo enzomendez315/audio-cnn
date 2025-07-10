@@ -108,7 +108,7 @@ def train():
     # Turn the WAV file into a spectrogram
     train_transform = nn.Sequential(
         T.MelSpectrogram(
-            sample_rate=22050, 
+            sample_rate=44100, 
             n_fft=1024, 
             hop_length=512, 
             n_mels=128, 
@@ -122,7 +122,7 @@ def train():
 
     validation_transform = nn.Sequential(
         T.MelSpectrogram(
-            sample_rate=22050, 
+            sample_rate=44100, 
             n_fft=1024, 
             hop_length=512, 
             n_mels=128, 

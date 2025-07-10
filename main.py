@@ -88,7 +88,7 @@ class AudioClassifier:
         spectrogram = spectrogram.to(self.device)
 
         with torch.no_grad():
-            output = self.model(spectrogram)
+            output, feature_maps = self.model(spectrogram, return_feature_maps=True)
             output = torch.nan_to_num(output)
 
             # dim=0 batch, dim=1 category
@@ -100,7 +100,48 @@ class AudioClassifier:
                 for probability, index in zip(top3_probabilities, top3_indices)
             ]
 
-        response = {"predictions": predictions}
+            visualization_data = {}
+            for name, tensor in feature_maps.items():
+                # [batch_size, channels, height, width]
+                if tensor.dim() == 4:
+                    # Convert to one channel only by taking the mean
+                    aggregated_tensor = torch.mean(tensor, dim=1)
+
+                    # Remove batch_size from tensor
+                    squeezed_tensor = aggregated_tensor.squeeze(0)
+
+                    numpy_array = squeezed_tensor.cpu().numpy()
+                    clean_array = np.nan_to_num(numpy_array)
+                    visualization_data[name] = {
+                        "shape": list(clean_array.shape),
+                        "values": clean_array.tolist()
+                    }
+
+            # Squeeze the first two dimensions
+            # [batch, channel, height, width] -> [height, width]
+            spectrogram_numpy = spectrogram.squeeze(0).squeeze(0).cpu().numpy()
+            clean_spectrogram = np.nan_to_num(spectrogram_numpy)
+
+            max_samples = 8000
+            if len(audio_data) > max_samples:
+                step = len(audio_data) // max_samples
+                waveform_data = audio_data[::step]
+            else:
+                waveform_data = audio_data
+
+        response = {
+            "predictions": predictions,
+            "visualization": visualization_data,
+            "input_spectrogram": {
+                "shape": list(clean_spectrogram.shape),
+                "values": clean_spectrogram.tolist()
+            },
+            "waveform": {
+                "values": waveform_data.tolist(),
+                "sample_rate": 22050,
+                "duration": len(audio_data) / 22050
+            }
+        }
 
         return response
     
@@ -119,6 +160,13 @@ def main():
     response.raise_for_status()
 
     result = response.json()
+
+    waveform_info = result.get("waveform", {})
+    if waveform_info:
+        values = waveform_info.get("values", {})
+        print(f"First 10 values: {[round(value, 4) for value in values[:10]]}...")
+        print(f"Duration: {waveform_info.get("duration", 0)}")
+
     print("Top predictions:")
     for prediction in result.get("predictions", []):
         print(f" -{prediction["category"]} {prediction["confidence"]:0.2%}")
