@@ -79,9 +79,9 @@ class AudioClassifier:
         if audio_data.ndim > 1:
             audio_data = np.mean(audio_data, axis=1)
 
-        if sample_rate != 22050:
+        if sample_rate != 44100:
             audio_data = librosa.resample(
-                y=audio_data, orig_sr=sample_rate, target_sr=22050
+                y=audio_data, orig_sr=sample_rate, target_sr=44100
             )
 
         spectrogram = self.audio_processor.process_audio_chunk(audio_data)
@@ -138,8 +138,8 @@ class AudioClassifier:
             },
             "waveform": {
                 "values": waveform_data.tolist(),
-                "sample_rate": 22050,
-                "duration": len(audio_data) / 22050
+                "sample_rate": 44100,
+                "duration": len(audio_data) / 44100
             }
         }
 
@@ -150,7 +150,7 @@ class AudioClassifier:
 def main():
     audio_data, sample_rate = sf.read("chirpingbirds.wav")
     buffer = io.BytesIO()
-    sf.write(buffer, audio_data, 22050, format="WAV")
+    sf.write(buffer, audio_data, sample_rate, format="WAV")
     audio_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     payload = {"audio_data": audio_b64}
 
