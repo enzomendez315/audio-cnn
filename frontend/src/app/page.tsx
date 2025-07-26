@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import ColorScale from "~/components/ColorScale";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
 
 interface Prediction {
   category: string;
@@ -246,11 +248,26 @@ export default function HomePage() {
                           {(pred.confidence * 100).toFixed(1)}%
                         </Badge>
                       </div>
+                      <Progress value={pred.confidence * 100} className="h-2" />
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="text-stone-900">
+                  Input Spectrogram
+                </CardHeader>
+                <CardContent>
+                  {}
+                  <div className="mt-5 flex justify-end">
+                    <ColorScale width={200} height={16} min={-1} max={1} />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
