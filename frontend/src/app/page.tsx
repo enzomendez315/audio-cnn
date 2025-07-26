@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface Prediction {
   category: string;
@@ -26,11 +26,68 @@ interface WaveformData {
 }
 
 interface ApiResponse {
-  prediction: Prediction[];
+  predictions: Prediction[];
   visualization: VisualizationData;
   inputSpectogram: LayerData;
   waveform: WaveformData;
 }
+
+const ESC50_EMOJI_MAP: Record<string, string> = {
+  dog: "🐕",
+  rain: "🌧️",
+  crying_baby: "👶",
+  door_wood_knock: "🚪",
+  helicopter: "🚁",
+  rooster: "🐓",
+  sea_waves: "🌊",
+  sneezing: "🤧",
+  mouse_click: "🖱️",
+  chainsaw: "🪚",
+  pig: "🐷",
+  crackling_fire: "🔥",
+  clapping: "👏",
+  keyboard_typing: "⌨️",
+  siren: "🚨",
+  cow: "🐄",
+  crickets: "🦗",
+  breathing: "💨",
+  door_wood_creaks: "🚪",
+  car_horn: "📯",
+  frog: "🐸",
+  chirping_birds: "🐦",
+  coughing: "😷",
+  can_opening: "🥫",
+  engine: "🚗",
+  cat: "🐱",
+  water_drops: "💧",
+  footsteps: "👣",
+  washing_machine: "🧺",
+  train: "🚂",
+  hen: "🐔",
+  wind: "💨",
+  laughing: "😂",
+  vacuum_cleaner: "🧹",
+  church_bells: "🔔",
+  insects: "🦟",
+  pouring_water: "🚰",
+  brushing_teeth: "🪥",
+  clock_alarm: "⏰",
+  airplane: "✈️",
+  sheep: "🐑",
+  toilet_flush: "🚽",
+  snoring: "😴",
+  clock_tick: "⏱️",
+  fireworks: "🎆",
+  crow: "🐦‍⬛",
+  thunderstorm: "⛈️",
+  drinking_sipping: "🥤",
+  glass_breaking: "🔨",
+  hand_saw: "🪚",
+};
+
+const getEmojiForClass = (className: string): string => {
+  return ESC50_EMOJI_MAP[className] || "🔈";
+};
 
 function splitLayers(visualization: VisualizationData) {
   const main: [string, LayerData][] = [];
@@ -170,6 +227,31 @@ export default function HomePage() {
               <p className="text-red-600">Error: {error}</p>
             </CardContent>
           </Card>
+        )}
+
+        {visualizationData && (
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>Top Predictions</CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {visualizationData.predictions.slice(0, 3).map((pred, i) => (
+                    <div key={pred.category} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-md font-medium text-stone-700">
+                          {getEmojiForClass(pred.category)}{" "}
+                          <span>{pred.category.replaceAll("_", " ")}</span>
+                        </div>
+                        <Badge variant={i === 0 ? "default" : "secondary"}>
+                          {(pred.confidence * 100).toFixed(1)}%
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </main>
