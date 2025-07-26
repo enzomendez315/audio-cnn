@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -31,6 +30,29 @@ interface ApiResponse {
   visualization: VisualizationData;
   inputSpectogram: LayerData;
   waveform: WaveformData;
+}
+
+function splitLayers(visualization: VisualizationData) {
+  const main: [string, LayerData][] = [];
+  const internals: Record<string, [string, LayerData][]> = {};
+  for (const [name, data] of Object.entries(visualization)) {
+    if (!name.includes(".")) {
+      // Top layer
+      main.push([name, data]);
+    } else {
+      // Internal layer
+      const [parent] = name.split(".");
+
+      if (parent === undefined) {
+        continue;
+      }
+
+      internals[parent] ??= [];
+      internals[parent].push([name, data]);
+    }
+  }
+
+  return { main, internals };
 }
 
 export default function HomePage() {
@@ -96,6 +118,10 @@ export default function HomePage() {
       setIsLoading(false);
     };
   };
+
+  const { main, internals } = visualizationData
+    ? splitLayers(visualizationData?.visualization)
+    : { main: [], internals: {} };
 
   return (
     <main className="min-h-screen bg-stone-50 p-8">
