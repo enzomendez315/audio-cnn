@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ColorScale from "~/components/ColorScale";
+import FeatureMap from "~/components/FeatureMap";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -30,7 +31,7 @@ interface WaveformData {
 interface ApiResponse {
   predictions: Prediction[];
   visualization: VisualizationData;
-  inputSpectogram: LayerData;
+  input_spectrogram: LayerData;
   waveform: WaveformData;
 }
 
@@ -102,9 +103,7 @@ function splitLayers(visualization: VisualizationData) {
       // Internal layer
       const [parent] = name.split(".");
 
-      if (parent === undefined) {
-        continue;
-      }
+      if (parent === undefined) continue;
 
       internals[parent] ??= [];
       internals[parent].push([name, data]);
@@ -261,7 +260,10 @@ export default function HomePage() {
                   Input Spectrogram
                 </CardHeader>
                 <CardContent>
-                  {}
+                  <FeatureMap
+                    data={visualizationData.input_spectrogram.values}
+                    title={`${visualizationData.input_spectrogram.shape.join(" x ")}`}
+                  />
                   <div className="mt-5 flex justify-end">
                     <ColorScale width={200} height={16} min={-1} max={1} />
                   </div>
