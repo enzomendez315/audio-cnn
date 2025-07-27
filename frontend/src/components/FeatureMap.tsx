@@ -1,3 +1,5 @@
+import { getColor } from "~/lib/colors";
+
 const FeatureMap = ({
   data,
   title,
@@ -26,8 +28,17 @@ const FeatureMap = ({
         {data.flatMap((row, i) =>
           row.map((val, j) => {
             const normalizedValue = absMax === 0 ? 0 : val / absMax;
-            //const [r, g, b] = getColor();
-            return <></>;
+            const [r, g, b] = getColor(normalizedValue);
+            return (
+              <rect
+                key={`${i}=${j}`}
+                x={j}
+                y={i}
+                width={1}
+                height={1}
+                fill={`rgb(${r}, ${g}, ${b})`}
+              />
+            );
           }),
         )}
       </svg>
