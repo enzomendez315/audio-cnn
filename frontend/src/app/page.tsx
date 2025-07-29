@@ -19,9 +19,7 @@ interface LayerData {
   values: number[][];
 }
 
-interface VisualizationData {
-  [layerName: string]: LayerData;
-}
+type VisualizationData = Record<string, LayerData>;
 
 interface WaveformData {
   values: number[];
@@ -90,7 +88,7 @@ const ESC50_EMOJI_MAP: Record<string, string> = {
 };
 
 const getEmojiForClass = (className: string): string => {
-  return ESC50_EMOJI_MAP[className] || "🔈";
+  return ESC50_EMOJI_MAP[className] ?? "🔈";
 };
 
 function splitLayers(visualization: VisualizationData) {
@@ -161,6 +159,7 @@ export default function HomePage() {
           throw new Error(`API error ${response.statusText}`);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data: ApiResponse = await response.json();
         setVisualizationData(data);
       } catch (error) {
