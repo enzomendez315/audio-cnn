@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
+import Waveform from "~/components/Waveform";
 
 interface Prediction {
   category: string;
@@ -24,7 +25,7 @@ interface VisualizationData {
 
 interface WaveformData {
   values: number[];
-  sampleRate: number;
+  sample_rate: number;
   duration: number;
 }
 
@@ -281,7 +282,12 @@ export default function HomePage() {
                     Audio Waveform
                   </CardTitle>
                 </CardHeader>
-                <CardContent></CardContent>
+                <CardContent>
+                  <Waveform
+                    data={visualizationData.waveform.values}
+                    title={`${visualizationData.waveform.duration.toFixed(2)}s * ${visualizationData.waveform.sample_rate}Hz`}
+                  />
+                </CardContent>
               </Card>
             </div>
 
@@ -322,6 +328,9 @@ export default function HomePage() {
                       )}
                     </div>
                   ))}
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <ColorScale width={200} height={16} min={-1} max={1} />
                 </div>
               </CardContent>
             </Card>
