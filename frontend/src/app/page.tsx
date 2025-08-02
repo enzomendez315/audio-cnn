@@ -269,6 +269,7 @@ export default function HomePage() {
                   <FeatureMap
                     data={visualizationData.input_spectrogram.values}
                     title={`${visualizationData.input_spectrogram.shape.join(" x ")}`}
+                    spectrogram
                   />
                   <div className="mt-5 flex justify-end">
                     <ColorScale width={200} height={16} min={-1} max={1} />

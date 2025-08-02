@@ -1,5 +1,3 @@
-import path from "path";
-
 const Waveform = ({ data, title }: { data: number[]; title: string }) => {
   if (!data || data.length === 0) return null;
 
